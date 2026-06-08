@@ -213,7 +213,7 @@ async def ocr_predict(file: UploadFile = File(...)):
         f.write(content)
 
     try:
-        result = ocr_instance.ocr(path, cls=False)
+        result = ocr_instance.ocr(path)
     except Exception as e:
         logger.exception("OCR failed")
         raise HTTPException(status_code=500, detail=str(e))
@@ -224,14 +224,32 @@ async def ocr_predict(file: UploadFile = File(...)):
     if not result or not result[0]:
         return {"text": "", "lines": []}
 
+    first_result = result[0]
     lines = []
     full_text = ""
-    for item in result[0]:
-        text = item[1][0]
-        confidence = round(item[1][1], 4)
-        box = [[round(p, 2) for p in pt] for pt in item[0]]
-        lines.append({"text": text, "confidence": confidence, "box": box})
-        full_text += text
+
+    if hasattr(first_result, "get") and "rec_texts" in first_result:
+        texts = first_result.get("rec_texts", [])
+        scores = first_result.get("rec_scores", [])
+        polys = first_result.get("rec_polys", [])
+
+        for text, confidence, box in zip(texts, scores, polys):
+            rounded_box = [[round(p, 2) for p in pt] for pt in box]
+            lines.append(
+                {
+                    "text": text,
+                    "confidence": round(confidence, 4),
+                    "box": rounded_box,
+                }
+            )
+            full_text += text
+    else:
+        for item in first_result:
+            text = item[1][0]
+            confidence = round(item[1][1], 4)
+            box = [[round(p, 2) for p in pt] for pt in item[0]]
+            lines.append({"text": text, "confidence": confidence, "box": box})
+            full_text += text
 
     return {"text": full_text, "lines": lines}
 
