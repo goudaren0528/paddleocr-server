@@ -1,10 +1,13 @@
 import os
 import uuid
+import time
 import logging
+from io import BytesIO
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse
+from PIL import Image
 from paddleocr import PaddleOCR
 
 logging.basicConfig(level=logging.INFO)
@@ -313,6 +316,12 @@ async def index():
     return INDEX_HTML
 
 
+MAX_IMAGE_BYTES = 10 * 1024 * 1024
+MAX_IMAGE_WIDTH = 4096
+MAX_IMAGE_HEIGHT = 4096
+MAX_IMAGE_PIXELS = 12_000_000
+
+
 @app.post("/ocr")
 async def ocr_predict(file: UploadFile = File(...)):
     if not file.content_type or not file.content_type.startswith("image/"):
@@ -323,22 +332,46 @@ async def ocr_predict(file: UploadFile = File(...)):
     path = os.path.join("/tmp", filename)
 
     content = await file.read()
-    if len(content) > 10 * 1024 * 1024:
+    if len(content) > MAX_IMAGE_BYTES:
         raise HTTPException(status_code=400, detail="Image too large (max 10MB)")
+
+    try:
+        with Image.open(BytesIO(content)) as img:
+            width, height = img.size
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid or unsupported image file")
+
+    if width > MAX_IMAGE_WIDTH or height > MAX_IMAGE_HEIGHT:
+        raise HTTPException(status_code=400, detail="Image dimensions too large (max 4096x4096)")
+
+    if width * height > MAX_IMAGE_PIXELS:
+        raise HTTPException(status_code=400, detail="Image pixel count too large (max 12MP)")
 
     with open(path, "wb") as f:
         f.write(content)
 
+    started_at = time.perf_counter()
+
     try:
         result = ocr_instance.ocr(path)
     except Exception as e:
-        logger.exception("OCR failed")
+        elapsed_ms = round((time.perf_counter() - started_at) * 1000, 2)
+        logger.exception("OCR failed after %.2f ms for %s (%d bytes)", elapsed_ms, file.filename, len(content))
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         if os.path.exists(path):
             os.remove(path)
 
     if not result or not result[0]:
+        elapsed_ms = round((time.perf_counter() - started_at) * 1000, 2)
+        logger.info(
+            "OCR completed in %.2f ms for %s (%d bytes, %dx%d), lines=0",
+            elapsed_ms,
+            file.filename,
+            len(content),
+            width,
+            height,
+        )
         return {"text": "", "lines": []}
 
     first_result = result[0]
@@ -367,6 +400,17 @@ async def ocr_predict(file: UploadFile = File(...)):
             box = [[round(p, 2) for p in pt] for pt in item[0]]
             lines.append({"text": text, "confidence": confidence, "box": box})
             full_text += text
+
+    elapsed_ms = round((time.perf_counter() - started_at) * 1000, 2)
+    logger.info(
+        "OCR completed in %.2f ms for %s (%d bytes, %dx%d), lines=%d",
+        elapsed_ms,
+        file.filename,
+        len(content),
+        width,
+        height,
+        len(lines),
+    )
 
     return {"text": full_text, "lines": lines}
 

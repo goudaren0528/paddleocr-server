@@ -1,5 +1,7 @@
+from io import BytesIO
 from unittest.mock import patch
 
+from PIL import Image
 from fastapi.testclient import TestClient
 
 import server
@@ -35,6 +37,12 @@ class FakeOCRRecordingCall:
 client = TestClient(server.app)
 
 
+def make_png_bytes(width=32, height=16):
+    buf = BytesIO()
+    Image.new("RGB", (width, height), "white").save(buf, format="PNG")
+    return buf.getvalue()
+
+
 def test_ocr_endpoint_calls_paddleocr_without_runtime_kwargs():
     fake_ocr = FakeOCRRecordingCall(result_factory=lambda: {
         "rec_texts": ["hello"],
@@ -47,7 +55,7 @@ def test_ocr_endpoint_calls_paddleocr_without_runtime_kwargs():
     with patch.object(server, "ocr_instance", fake_ocr):
         response = client.post(
             "/ocr",
-            files={"file": ("sample.png", b"fake-image-bytes", "image/png")},
+            files={"file": ("sample.png", make_png_bytes(), "image/png")},
         )
 
     assert response.status_code == 200
@@ -71,7 +79,7 @@ def test_ocr_endpoint_accepts_dict_like_ocr_results():
     with patch.object(server, "ocr_instance", fake_ocr):
         response = client.post(
             "/ocr",
-            files={"file": ("sample.png", b"fake-image-bytes", "image/png")},
+            files={"file": ("sample.png", make_png_bytes(), "image/png")},
         )
 
     assert response.status_code == 200
@@ -87,3 +95,80 @@ def test_ocr_endpoint_accepts_dict_like_ocr_results():
             }
         ],
     }
+
+
+def test_ocr_endpoint_rejects_images_with_dimensions_over_limit():
+    response = client.post(
+        "/ocr",
+        files={"file": ("huge.png", make_png_bytes(width=5000, height=100), "image/png")},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Image dimensions too large (max 4096x4096)"}
+
+
+def test_ocr_endpoint_rejects_images_with_pixel_count_over_limit():
+    response = client.post(
+        "/ocr",
+        files={"file": ("large.png", make_png_bytes(width=4000, height=4000), "image/png")},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Image pixel count too large (max 12MP)"}
+
+
+def test_ocr_endpoint_rejects_invalid_image_payloads():
+    response = client.post(
+        "/ocr",
+        files={"file": ("broken.png", b"not-a-real-image", "image/png")},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Invalid or unsupported image file"}
+
+
+def test_ocr_endpoint_logs_successful_runtime_metrics():
+    fake_ocr = FakeOCRRecordingCall()
+
+    with patch.object(server, "ocr_instance", fake_ocr), patch.object(server.logger, "info") as info_mock:
+        response = client.post(
+            "/ocr",
+            files={"file": ("sample.png", make_png_bytes(), "image/png")},
+        )
+
+    assert response.status_code == 200
+    assert info_mock.called
+    log_message = info_mock.call_args[0][0]
+    assert log_message.startswith("OCR completed in %.2f ms")
+
+
+def test_ocr_endpoint_logs_failure_runtime_metrics():
+    class FailingOCR:
+        def ocr(self, image_path, **kwargs):
+            raise RuntimeError("boom")
+
+    with patch.object(server, "ocr_instance", FailingOCR()), patch.object(server.logger, "exception") as exc_mock:
+        response = client.post(
+            "/ocr",
+            files={"file": ("sample.png", make_png_bytes(), "image/png")},
+        )
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "boom"}
+    assert exc_mock.called
+    log_message = exc_mock.call_args[0][0]
+    assert log_message.startswith("OCR failed after %.2f ms")
+
+
+def test_ocr_endpoint_returns_empty_payload_when_no_text_detected():
+    fake_ocr = FakeOCRRecordingCall(result_factory=lambda: {"rec_texts": [], "rec_scores": [], "rec_polys": []})
+
+    with patch.object(server, "ocr_instance", fake_ocr), patch.object(server.logger, "info") as info_mock:
+        response = client.post(
+            "/ocr",
+            files={"file": ("sample.png", make_png_bytes(), "image/png")},
+        )
+
+    assert response.status_code == 200
+    assert response.json() == {"text": "", "lines": []}
+    assert info_mock.called
