@@ -92,8 +92,8 @@ INDEX_HTML = """<!DOCTYPE html>
       <button class="tab-btn" onclick="switchTab('js')">JavaScript</button>
     </div>
     <div class="tab-content active" id="tab-curl">
-      <p style="font-size:13px;color:#888;margin:8px 0;">POST an image, returns recognized text and per-line confidence.</p>
-      <div class="code-block"><code>curl -X POST http://HOST:18001/ocr \\
+      <p style="font-size:13px;color:#888;margin:8px 0;">POST an image to the OCR endpoint. The server accepts one multipart file field named <code>file</code> and returns merged text plus per-line details.</p>
+      <div class="code-block"><code>curl -X POST https://ocr.leejh.cyou/ocr \\
   -F "file=@your_image.png"</code></div>
     </div>
     <div class="tab-content" id="tab-python">
@@ -102,7 +102,7 @@ INDEX_HTML = """<!DOCTYPE html>
 
 with open("your_image.png", "rb") as f:
     r = requests.post(
-        "http://HOST:18001/ocr",
+        "https://ocr.leejh.cyou/ocr",
         files={"file": f}
     )
 print(r.json())</code></div>
@@ -112,13 +112,38 @@ print(r.json())</code></div>
       <div class="code-block"><code>const form = new FormData();
 form.append("file", fileInput.files[0]);
 
-const res = await fetch("http://HOST:18001/ocr", {
+const res = await fetch("https://ocr.leejh.cyou/ocr", {
   method: "POST",
   body: form
 });
 console.log(await res.json());</code></div>
     </div>
-    <p style="font-size:12px;color:#aaa;margin-top:12px;">Replace <code>HOST</code> with your server IP. Health check: <code>GET /health</code></p>
+    <div style="font-size:13px;color:#666;margin-top:14px;line-height:1.7;">
+      <p><strong>Request</strong></p>
+      <ul style="padding-left:18px;margin:6px 0 12px;">
+        <li><code>POST /ocr</code> — Content-Type: <code>multipart/form-data</code></li>
+        <li><code>file</code> — required image file field; supports common image formats such as PNG and JPG</li>
+      </ul>
+      <p><strong>Response</strong></p>
+      <ul style="padding-left:18px;margin:6px 0 12px;">
+        <li><code>text</code> — concatenated OCR text from the whole image</li>
+        <li><code>lines</code> — array of recognized text lines</li>
+        <li><code>lines[].text</code> — text content of the line</li>
+        <li><code>lines[].confidence</code> — confidence score for the line, range 0-1</li>
+        <li><code>lines[].box</code> — quadrilateral coordinates for the line, ordered as <code>[[x1,y1],[x2,y2],[x3,y3],[x4,y4]]</code></li>
+      </ul>
+      <div class="code-block"><code>{
+  "text": "示例识别文本",
+  "lines": [
+    {
+      "text": "示例识别文本",
+      "confidence": 0.9987,
+      "box": [[12.5, 18.0], [220.1, 18.0], [220.1, 52.3], [12.5, 52.3]]
+    }
+  ]
+}</code></div>
+    </div>
+    <p style="font-size:12px;color:#aaa;margin-top:12px;">Service URL: <code>https://ocr.leejh.cyou</code> · Health check: <code>GET /health</code></p>
   </div>
 </div>
 
