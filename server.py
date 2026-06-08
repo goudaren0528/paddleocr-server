@@ -17,7 +17,7 @@ ocr_instance = None
 async def lifespan(app: FastAPI):
     global ocr_instance
     logger.info("Initializing PaddleOCR...")
-    ocr_instance = PaddleOCR(lang="ch", use_textline_orientation=False, use_gpu=False)
+    ocr_instance = PaddleOCR(lang="ch", use_textline_orientation=False)
     logger.info("PaddleOCR initialized.")
     yield
     ocr_instance = None
