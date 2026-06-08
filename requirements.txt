@@ -1,5 +1,5 @@
-paddlepaddle==3.1.1
-paddleocr>=3.5.0
+paddlepaddle==2.6.2
+paddleocr==2.7.3
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 python-multipart>=0.0.12

@@ -1,6 +1,5 @@
 services:
   ocr:
-    platform: linux/amd64
     build: .
     container_name: paddleocr-server
     restart: unless-stopped

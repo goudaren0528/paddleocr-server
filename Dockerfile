@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.10-slim
 
 RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
@@ -14,7 +14,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN python -c "from paddleocr import PaddleOCR; PaddleOCR(lang='ch', use_textline_orientation=False)"
+RUN python -c "from paddleocr import PaddleOCR; PaddleOCR(lang='ch', use_angle_cls=False)"
 
 COPY . .
 
