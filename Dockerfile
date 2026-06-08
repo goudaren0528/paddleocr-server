@@ -1,10 +1,11 @@
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
-    libgl1-mesa-glx \
+    libgl1 \
+    libglx0 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
