@@ -51,6 +51,12 @@ INDEX_HTML = """<!DOCTYPE html>
   .result pre { background: #f9f9f9; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
   .code-block { background: #2d2d2d; color: #e6e6e6; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.6; margin: 12px 0; }
   .code-block code { font-family: "Fira Code", "Consolas", monospace; }
+  .code-block-wrap { margin: 12px 0; }
+  .code-block-head { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+  .copy-mini { padding: 6px 10px; background: #444; color: #f4f4f4; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .copy-mini:hover { opacity: 0.92; }
+  .copy-mini.copied { background: #2f7d32; }
+  .copy-mini.failed { background: #a93226; }
   .tab { display: flex; gap: 0; margin-bottom: 0; }
   .tab-btn { padding: 8px 16px; background: #eee; border: none; cursor: pointer; font-size: 13px; border-radius: 6px 6px 0 0; margin-right: 4px; }
   .tab-btn.active { background: #2d2d2d; color: #e6e6e6; }
@@ -100,12 +106,17 @@ INDEX_HTML = """<!DOCTYPE html>
     </div>
     <div class="tab-content active" id="tab-curl">
       <p style="font-size:13px;color:#888;margin:8px 0;">POST an image to the OCR endpoint. The server accepts one multipart file field named <code>file</code> and returns merged text plus per-line details.</p>
-      <div class="code-block"><code>curl -X POST https://ocr.leejh.cyou/ocr \\
+      <div class="code-block-wrap">
+        <div class="code-block-head"><button class="copy-mini" type="button" onclick="copyCodeBlock(this)">Copy</button></div>
+        <div class="code-block"><code>curl -X POST https://ocr.leejh.cyou/ocr \\
   -F "file=@your_image.png"</code></div>
+      </div>
     </div>
     <div class="tab-content" id="tab-python">
       <p style="font-size:13px;color:#888;margin:8px 0;">Use Python requests library.</p>
-      <div class="code-block"><code>import requests
+      <div class="code-block-wrap">
+        <div class="code-block-head"><button class="copy-mini" type="button" onclick="copyCodeBlock(this)">Copy</button></div>
+        <div class="code-block"><code>import requests
 
 with open("your_image.png", "rb") as f:
     r = requests.post(
@@ -113,10 +124,13 @@ with open("your_image.png", "rb") as f:
         files={"file": f}
     )
 print(r.json())</code></div>
+      </div>
     </div>
     <div class="tab-content" id="tab-js">
       <p style="font-size:13px;color:#888;margin:8px 0;">Browser or Node.js with fetch.</p>
-      <div class="code-block"><code>const form = new FormData();
+      <div class="code-block-wrap">
+        <div class="code-block-head"><button class="copy-mini" type="button" onclick="copyCodeBlock(this)">Copy</button></div>
+        <div class="code-block"><code>const form = new FormData();
 form.append("file", fileInput.files[0]);
 
 const res = await fetch("https://ocr.leejh.cyou/ocr", {
@@ -124,6 +138,7 @@ const res = await fetch("https://ocr.leejh.cyou/ocr", {
   body: form
 });
 console.log(await res.json());</code></div>
+      </div>
     </div>
     <div class="doc-actions">
       <button class="mini-btn" type="button" onclick="copyAllApiExamples()">Copy all examples</button>
@@ -137,12 +152,17 @@ console.log(await res.json());</code></div>
     </div>
     <div style="font-size:13px;color:#666;margin-top:14px;line-height:1.7;">
       <p><strong>Request Example</strong></p>
-      <div class="code-block"><code>POST /ocr
+      <div class="code-block-wrap">
+        <div class="code-block-head"><button class="copy-mini" type="button" onclick="copyCodeBlock(this)">Copy</button></div>
+        <div class="code-block"><code>POST /ocr
 Content-Type: multipart/form-data
 
 file=@your_image.png</code></div>
+      </div>
       <p><strong>Response Example</strong></p>
-      <div class="code-block"><code>{
+      <div class="code-block-wrap">
+        <div class="code-block-head"><button class="copy-mini" type="button" onclick="copyCodeBlock(this)">Copy</button></div>
+        <div class="code-block"><code>{
   "text": "示例识别文本",
   "lines": [
     {
@@ -152,15 +172,21 @@ file=@your_image.png</code></div>
     }
   ]
 }</code></div>
+      </div>
       <p><strong>Field Reference</strong></p>
-      <div class="code-block"><code>file                required image file field (multipart/form-data)
+      <div class="code-block-wrap">
+        <div class="code-block-head"><button class="copy-mini" type="button" onclick="copyCodeBlock(this)">Copy</button></div>
+        <div class="code-block"><code>file                required image file field (multipart/form-data)
 text                concatenated OCR text from the whole image
 lines               array of recognized text lines
 lines[].text        text content of the line
 lines[].confidence  confidence score, range 0-1
 lines[].box         quadrilateral coordinates [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]</code></div>
+      </div>
       <p><strong>Error Response Examples</strong></p>
-      <div class="code-block"><code>400 Bad Request
+      <div class="code-block-wrap">
+        <div class="code-block-head"><button class="copy-mini" type="button" onclick="copyCodeBlock(this)">Copy</button></div>
+        <div class="code-block"><code>400 Bad Request
 {"detail": "Only image files are accepted"}
 
 400 Bad Request
@@ -168,6 +194,7 @@ lines[].box         quadrilateral coordinates [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]<
 
 500 Internal Server Error
 {"detail": "<runtime error message>"}</code></div>
+      </div>
     </div>
     <p style="font-size:12px;color:#aaa;margin-top:12px;">Service URL: <code>https://ocr.leejh.cyou</code> · Health check: <code>GET /health</code></p>
   </div>
@@ -238,11 +265,33 @@ function switchTab(name) {
   document.getElementById(`tab-${name}`).classList.add("active");
 }
 
+async function writeClipboard(text) {
+  await navigator.clipboard.writeText(text);
+}
+
+async function copyCodeBlock(button) {
+  const code = button.closest('.code-block-wrap').querySelector('.code-block code').textContent;
+  try {
+    await writeClipboard(code);
+    button.textContent = 'Copied';
+    button.classList.remove('failed');
+    button.classList.add('copied');
+  } catch (err) {
+    button.textContent = 'Failed';
+    button.classList.remove('copied');
+    button.classList.add('failed');
+  }
+  setTimeout(() => {
+    button.textContent = 'Copy';
+    button.classList.remove('copied', 'failed');
+  }, 1500);
+}
+
 async function copyAllApiExamples() {
   const payload = `Service URL\nhttps://ocr.leejh.cyou\n\nRequest Example\nPOST /ocr\nContent-Type: multipart/form-data\n\nfile=@your_image.png\n\nCurl Example\ncurl -X POST https://ocr.leejh.cyou/ocr \\\n  -F "file=@your_image.png"\n\nPython Example\nimport requests\n\nwith open("your_image.png", "rb") as f:\n    r = requests.post(\n        "https://ocr.leejh.cyou/ocr",\n        files={"file": f}\n    )\nprint(r.json())\n\nJavaScript Example\nconst form = new FormData();\nform.append("file", fileInput.files[0]);\n\nconst res = await fetch("https://ocr.leejh.cyou/ocr", {\n  method: "POST",\n  body: form\n});\nconsole.log(await res.json());\n\nResponse Example\n{\n  "text": "示例识别文本",\n  "lines": [\n    {\n      "text": "示例识别文本",\n      "confidence": 0.9987,\n      "box": [[12.5, 18.0], [220.1, 18.0], [220.1, 52.3], [12.5, 52.3]]\n    }\n  ]\n}\n\nField Reference\nfile                required image file field (multipart/form-data)\ntext                concatenated OCR text from the whole image\nlines               array of recognized text lines\nlines[].text        text content of the line\nlines[].confidence  confidence score, range 0-1\nlines[].box         quadrilateral coordinates [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]\n\nConstraints\n- Required field: file\n- Content-Type must match image/*\n- Max image size: 10MB\n- Empty OCR result returns {"text": "", "lines": []}\n\nError Response Examples\n400 Bad Request\n{"detail": "Only image files are accepted"}\n\n400 Bad Request\n{"detail": "Image too large (max 10MB)"}\n\n500 Internal Server Error\n{"detail": "<runtime error message>"}`;
   const copyStatus = document.getElementById("copyStatus");
   try {
-    await navigator.clipboard.writeText(payload);
+    await writeClipboard(payload);
     copyStatus.textContent = "Copied";
     copyStatus.classList.remove("error");
   } catch (err) {
