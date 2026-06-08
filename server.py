@@ -119,19 +119,12 @@ const res = await fetch("https://ocr.leejh.cyou/ocr", {
 console.log(await res.json());</code></div>
     </div>
     <div style="font-size:13px;color:#666;margin-top:14px;line-height:1.7;">
-      <p><strong>Request</strong></p>
-      <ul style="padding-left:18px;margin:6px 0 12px;">
-        <li><code>POST /ocr</code> — Content-Type: <code>multipart/form-data</code></li>
-        <li><code>file</code> — required image file field; supports common image formats such as PNG and JPG</li>
-      </ul>
-      <p><strong>Response</strong></p>
-      <ul style="padding-left:18px;margin:6px 0 12px;">
-        <li><code>text</code> — concatenated OCR text from the whole image</li>
-        <li><code>lines</code> — array of recognized text lines</li>
-        <li><code>lines[].text</code> — text content of the line</li>
-        <li><code>lines[].confidence</code> — confidence score for the line, range 0-1</li>
-        <li><code>lines[].box</code> — quadrilateral coordinates for the line, ordered as <code>[[x1,y1],[x2,y2],[x3,y3],[x4,y4]]</code></li>
-      </ul>
+      <p><strong>Request Example</strong></p>
+      <div class="code-block"><code>POST /ocr
+Content-Type: multipart/form-data
+
+file=@your_image.png</code></div>
+      <p><strong>Response Example</strong></p>
       <div class="code-block"><code>{
   "text": "示例识别文本",
   "lines": [
@@ -142,6 +135,13 @@ console.log(await res.json());</code></div>
     }
   ]
 }</code></div>
+      <p><strong>Field Reference</strong></p>
+      <div class="code-block"><code>file                required image file field (multipart/form-data)
+text                concatenated OCR text from the whole image
+lines               array of recognized text lines
+lines[].text        text content of the line
+lines[].confidence  confidence score, range 0-1
+lines[].box         quadrilateral coordinates [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]</code></div>
     </div>
     <p style="font-size:12px;color:#aaa;margin-top:12px;">Service URL: <code>https://ocr.leejh.cyou</code> · Health check: <code>GET /health</code></p>
   </div>
