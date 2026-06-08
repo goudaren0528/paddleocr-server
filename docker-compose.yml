@@ -1,0 +1,14 @@
+services:
+  ocr:
+    build: .
+    container_name: paddleocr-server
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ocr_models:/root/.paddleocr
+
+volumes:
+  ocr_models:
