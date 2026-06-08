@@ -59,6 +59,13 @@ INDEX_HTML = """<!DOCTYPE html>
   .loading { display: none; text-align: center; margin: 12px 0; color: #4a90d9; }
   .status { font-size: 13px; color: #4caf50; text-align: center; margin-bottom: 12px; }
   .error { color: #e74c3c; }
+  .doc-actions { display: flex; justify-content: flex-end; margin: 10px 0 14px; }
+  .mini-btn { padding: 8px 12px; background: #2d2d2d; color: #e6e6e6; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .mini-btn:hover { opacity: 0.92; }
+  .doc-note { font-size: 13px; color: #666; margin: 10px 0; line-height: 1.7; }
+  .doc-note code { background: #f1f1f1; padding: 1px 4px; border-radius: 4px; }
+  .copy-status { font-size: 12px; color: #4caf50; margin-left: 8px; align-self: center; }
+  .copy-status.error { color: #e74c3c; }
 </style>
 </head>
 <body>
@@ -118,6 +125,16 @@ const res = await fetch("https://ocr.leejh.cyou/ocr", {
 });
 console.log(await res.json());</code></div>
     </div>
+    <div class="doc-actions">
+      <button class="mini-btn" type="button" onclick="copyAllApiExamples()">Copy all examples</button>
+      <span class="copy-status" id="copyStatus"></span>
+    </div>
+    <div class="doc-note">
+      Accepts one required multipart file field named <code>file</code>. The server currently validates <code>Content-Type</code> with the rule <code>image/*</code>, so common image formats supported by clients and OCR pipelines such as PNG, JPG/JPEG, BMP, WEBP, GIF, and TIFF can be uploaded as long as the request is labeled as an image.
+    </div>
+    <div class="doc-note">
+      Size limit: <code>10MB</code> per image. If no text is recognized, the API still returns <code>200 OK</code> with <code>{"text": "", "lines": []}</code>.
+    </div>
     <div style="font-size:13px;color:#666;margin-top:14px;line-height:1.7;">
       <p><strong>Request Example</strong></p>
       <div class="code-block"><code>POST /ocr
@@ -142,6 +159,15 @@ lines               array of recognized text lines
 lines[].text        text content of the line
 lines[].confidence  confidence score, range 0-1
 lines[].box         quadrilateral coordinates [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]</code></div>
+      <p><strong>Error Response Examples</strong></p>
+      <div class="code-block"><code>400 Bad Request
+{"detail": "Only image files are accepted"}
+
+400 Bad Request
+{"detail": "Image too large (max 10MB)"}
+
+500 Internal Server Error
+{"detail": "<runtime error message>"}</code></div>
     </div>
     <p style="font-size:12px;color:#aaa;margin-top:12px;">Service URL: <code>https://ocr.leejh.cyou</code> · Health check: <code>GET /health</code></p>
   </div>
@@ -210,6 +236,23 @@ function switchTab(name) {
   document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
   document.querySelector(`[onclick="switchTab('${name}')"]`).classList.add("active");
   document.getElementById(`tab-${name}`).classList.add("active");
+}
+
+async function copyAllApiExamples() {
+  const payload = `Service URL\nhttps://ocr.leejh.cyou\n\nRequest Example\nPOST /ocr\nContent-Type: multipart/form-data\n\nfile=@your_image.png\n\nCurl Example\ncurl -X POST https://ocr.leejh.cyou/ocr \\\n  -F "file=@your_image.png"\n\nPython Example\nimport requests\n\nwith open("your_image.png", "rb") as f:\n    r = requests.post(\n        "https://ocr.leejh.cyou/ocr",\n        files={"file": f}\n    )\nprint(r.json())\n\nJavaScript Example\nconst form = new FormData();\nform.append("file", fileInput.files[0]);\n\nconst res = await fetch("https://ocr.leejh.cyou/ocr", {\n  method: "POST",\n  body: form\n});\nconsole.log(await res.json());\n\nResponse Example\n{\n  "text": "示例识别文本",\n  "lines": [\n    {\n      "text": "示例识别文本",\n      "confidence": 0.9987,\n      "box": [[12.5, 18.0], [220.1, 18.0], [220.1, 52.3], [12.5, 52.3]]\n    }\n  ]\n}\n\nField Reference\nfile                required image file field (multipart/form-data)\ntext                concatenated OCR text from the whole image\nlines               array of recognized text lines\nlines[].text        text content of the line\nlines[].confidence  confidence score, range 0-1\nlines[].box         quadrilateral coordinates [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]\n\nConstraints\n- Required field: file\n- Content-Type must match image/*\n- Max image size: 10MB\n- Empty OCR result returns {"text": "", "lines": []}\n\nError Response Examples\n400 Bad Request\n{"detail": "Only image files are accepted"}\n\n400 Bad Request\n{"detail": "Image too large (max 10MB)"}\n\n500 Internal Server Error\n{"detail": "<runtime error message>"}`;
+  const copyStatus = document.getElementById("copyStatus");
+  try {
+    await navigator.clipboard.writeText(payload);
+    copyStatus.textContent = "Copied";
+    copyStatus.classList.remove("error");
+  } catch (err) {
+    copyStatus.textContent = "Copy failed";
+    copyStatus.classList.add("error");
+  }
+  setTimeout(() => {
+    copyStatus.textContent = "";
+    copyStatus.classList.remove("error");
+  }, 1800);
 }
 </script>
 </body>
